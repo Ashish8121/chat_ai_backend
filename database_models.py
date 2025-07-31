@@ -2,8 +2,11 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Foreign
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from datetime import datetime
 import pytz
+import os
+from dotenv import load_dotenv
 
-SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:Fin%40885500@localhost/testdb"
+load_dotenv()
+SQLALCHEMY_DATABASE_URL = os.getenv("DB_URL")
 
 db_engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)

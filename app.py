@@ -5,11 +5,20 @@ from sqlalchemy import text  # ✅ FIXED: Import `text` to avoid NameError
 from pydantic import BaseModel, EmailStr
 import bcrypt
 import uvicorn
-
+from contextlib import asynccontextmanager
 from database_models import User, db_engine, SessionLocal, Base
 from jwt_token import generate_jwt  # Your JWT helper
 
 app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ✅ This runs once when the app starts
+    Base.metadata.create_all(bind=db_engine)
+    yield
+    # 🔒 You can also close DB connections or cleanup here if needed
+
+app = FastAPI(lifespan=lifespan)
 
 # ✅ CORS Configuration
 app.add_middleware(
