@@ -93,8 +93,8 @@ def add_user(request: RegisterRequest, db: Session = Depends(get_db)):
         email=request.email,
         password=hashed_password.decode('utf-8')
     )
-    db.session.add(new_user)
-    db.session.commit()
+    db.add(new_user)
+    db.commit()
 
 
     return {"message": "User added successfully"}
