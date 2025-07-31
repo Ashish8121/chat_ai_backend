@@ -23,7 +23,7 @@ app = FastAPI(lifespan=lifespan)
 # ✅ CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://chat-ai-backend-a8ia.onrender.com"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
