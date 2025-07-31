@@ -44,6 +44,14 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+@app.get("/")
+def read_root():
+    return {"message": "Backend is up and running"}
+
+
+
+
+
 # ✅ /check_user route
 @app.post("/check_user")
 def check_user(request: LoginRequest, db: Session = Depends(get_db)):
