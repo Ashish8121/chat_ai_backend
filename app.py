@@ -82,8 +82,6 @@ class RegisterRequest(BaseModel):
 # ✅ /add_user route
 @app.post("/add_user")
 def add_user(request: RegisterRequest, db: Session = Depends(get_db)):
-    if db.query(User).filter_by(name=request.name).first():
-        raise HTTPException(status_code=409, detail="Name already exists")
     if db.query(User).filter_by(email=request.email).first():
         raise HTTPException(status_code=409, detail="Email already exists")
 
