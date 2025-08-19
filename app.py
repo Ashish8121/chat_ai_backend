@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text  # ✅ FIXED: Import `text` to avoid NameError
@@ -6,8 +6,8 @@ from pydantic import BaseModel, EmailStr
 import bcrypt
 import uvicorn
 from contextlib import asynccontextmanager
-from database_models import User, db_engine, SessionLocal, Base
-from jwt_token import generate_jwt  # Your JWT helper
+from database_models import User, db_engine, SessionLocal, Base, Messages
+from jwt_token import generate_jwt , verify_jwt  # Your JWT helper
 from fastapi import Query
 app = FastAPI()
 
@@ -105,26 +105,46 @@ def search_users(search: str = Query(default="", description="Search by user nam
     users = db.query(User).filter(User.name.ilike(f"%{search}%")).all()
     return [{"id": user.id, "name": user.name} for user in users]
 
+
+
+# ✅ SendMessage Schema
+class SendMessageRequest(BaseModel):
+    recipient_id: int
+    message: str
+
+# ✅ /send_message route
+@app.post("/send_message")
+def send_message(
+    request: Request,
+    body: SendMessageRequest,
+    db: Session = Depends(get_db)
+):
+    # Extract and verify JWT
+    auth_header = request.headers.get("Authorization")
+    current_user_id = verify_jwt(auth_header)
+    if current_user_id is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    if not body.recipient_id or not body.message:
+        raise HTTPException(status_code=400, detail="Recipient and message required")
+
+    user_message = Messages(
+        sender_id=current_user_id,
+        recipient_id=body.recipient_id,
+        text=body.message
+    )
+    db.add(user_message)
+    db.commit()
+    db.refresh(user_message)
+
+    return {"data": user_message.to_dict()}
+
 # ✅ Run the app with Uvicorn
 if __name__ == "__main__":
     import os
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 
-
-
-
-
-
-
-# @app.route('/search_users', methods=['GET'])
-# def search_users():
-#     search_query = request.args.get('search', '')
-#     if search_query == '':
-#         return jsonify([]), 200
-
-#     users = User.query.filter(User.name.ilike(f"%{search_query}%")).all()
-#     return jsonify([{'id': user.id, 'name': user.name} for user in users]), 200
 
 
 
