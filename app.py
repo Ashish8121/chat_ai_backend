@@ -8,7 +8,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from database_models import User, db_engine, SessionLocal, Base
 from jwt_token import generate_jwt  # Your JWT helper
-
+from fastapi import Query
 app = FastAPI()
 
 @asynccontextmanager
@@ -97,6 +97,13 @@ def add_user(request: RegisterRequest, db: Session = Depends(get_db)):
 
     return {"message": "User added successfully"}
 
+@app.get("/search_users")
+def search_users(search: str = Query(default="", description="Search by user name"), db: Session = Depends(get_db)):
+    if search == "":
+        return []
+
+    users = db.query(User).filter(User.name.ilike(f"%{search}%")).all()
+    return [{"id": user.id, "name": user.name} for user in users]
 
 # ✅ Run the app with Uvicorn
 if __name__ == "__main__":
@@ -110,6 +117,14 @@ if __name__ == "__main__":
 
 
 
+# @app.route('/search_users', methods=['GET'])
+# def search_users():
+#     search_query = request.args.get('search', '')
+#     if search_query == '':
+#         return jsonify([]), 200
+
+#     users = User.query.filter(User.name.ilike(f"%{search_query}%")).all()
+#     return jsonify([{'id': user.id, 'name': user.name} for user in users]), 200
 
 
 
