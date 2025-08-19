@@ -139,6 +139,58 @@ def send_message(
 
     return {"data": user_message.to_dict()}
 
+
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+# ✅ /get_messages_with_user
+@app.get("/get_messages_with_user/{recipient_id}")
+def get_messages_with_user(
+    recipient_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    # Verify JWT
+    auth_header = request.headers.get("Authorization")
+    current_user_id = verify_jwt(auth_header)
+    if current_user_id is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Fetch messages between current_user and recipient
+    messages = db.query(Messages).filter(
+        ((Messages.sender_id == current_user_id) & (Messages.recipient_id == recipient_id)) |
+        ((Messages.sender_id == recipient_id) & (Messages.recipient_id == current_user_id))
+    ).order_by(Messages.timestamp).all()
+
+    return {"messages": [m.to_dict() for m in messages]}
+
+
+# ✅ /get_active_chats
+@app.get("/get_active_chats")
+def get_active_chats(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    # Verify JWT
+    auth_header = request.headers.get("Authorization")
+    current_user_id = verify_jwt(auth_header)
+    if current_user_id is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Return all users except current user
+    users = db.query(User).filter(User.id != current_user_id).all()
+    user_list = [{"id": user.id, "name": user.name} for user in users]
+
+    return {"users": user_list}
+
 # ✅ Run the app with Uvicorn
 if __name__ == "__main__":
     import os
